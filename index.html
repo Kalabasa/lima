@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lima Gang</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #map {
+        width: 100%;
+        height: 100%;
+        cursor: default;
+      }
+      .tooltip-content {
+        font-size: 1rem;
+        h2 {
+          font-size: 1em;
+          margin: 0;
+        }
+        table {
+          font-size: 0.75em;
+        }
+        th {
+          text-align: start;
+          + th {
+            padding-left: 1em;
+          }
+        }
+        td + td {
+          padding-left: 1em;
+        }
+      }
+      #info-box {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 0.5em 2em 1em;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        font-family: sans-serif;
+        z-index: 1000;
+        animation: lima 0.8s infinite;
+
+        h1 {
+          margin: 0 0 0.25em;
+          font-size: 2em;
+          font-weight: bold;
+          text-transform: uppercase;
+          color: #c21;
+        }
+
+        p {
+          margin: 0;
+          font-size: 0.9em;
+          color: #333;
+          * + & {
+            margin-top: 0.5em;
+          }
+        }
+      }
+      @keyframes lima {
+        0%,
+        49.99% {
+          cursor: grab;
+        }
+        50%,
+        100% {
+          cursor: grabbing;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <div id="info-box">
+      <h1>🖐🏽 Lima Gang 🤚🏽</h1>
+      <p>Welcome to the LIMA zone.</p>
+      <p><strong>What’s this?</strong> Places where <i>lima</i> means 5.</p>
+      <p>
+        <strong>Source:</strong>
+        <a href="https://en.wiktionary.org/wiki/lima" target="_blank"
+          >Wiktionary</a
+        >
+      </p>
+    </div>
+
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+      const limaLanguages = [
+        { name: "Agutaynen", geoCode: "PHL" },
+        { name: "Aklanon", geoCode: "PHL" },
+        { name: "Alangan", geoCode: "PHL" },
+        { name: "Alu", geoCode: "PHL" },
+        { name: "Amis", geoCode: "TWN" },
+        { name: "Asi", geoCode: "PHL" },
+        { name: "Banjarese", geoCode: "IDN" },
+        { name: "Bariai", geoCode: "PNG" },
+        { name: "Bikol Central", geoCode: "PHL" },
+        { name: "Bolongan", geoCode: "IDN" },
+        { name: "Brooke's Point Palawano", geoCode: "PHL" },
+        { name: "Brunei Malay", geoCode: "BRN" },
+        { name: "Bughotu", geoCode: "SLB" },
+        { name: "Casiguran Dumagat Agta", geoCode: "PHL" },
+        { name: "Central Bontoc", geoCode: "PHL" },
+        { name: "Central Melanau", geoCode: "MYS" },
+        { name: "Cia-Cia", geoCode: "IDN" },
+        { name: "Cuyunon", geoCode: "PHL" },
+        { name: "Dibabawon Manobo", geoCode: "PHL" },
+        { name: "Dupaningan Agta", geoCode: "PHL" },
+        { name: "East Futuna", geoCode: "WLF" },
+        { name: "Gela", geoCode: "SLB" },
+        { name: "Hanunoo", geoCode: "PHL" },
+        { name: "Hiligaynon", geoCode: "PHL" },
+        { name: "Iban", geoCode: "MYS" },
+        { name: "Ibanag", geoCode: "PHL" },
+        { name: "Ilocano", geoCode: "PHL" },
+        { name: "Inonhan", geoCode: "PHL" },
+        { name: "Isnag", geoCode: "PHL" },
+        { name: "Itawit", geoCode: "PHL" },
+        { name: "Ivatan", geoCode: "PHL" },
+        { name: "Kagayanen", geoCode: "PHL" },
+        { name: "Kankanaey", geoCode: "PHL" },
+        { name: "Kapingamarangi", geoCode: "FSM" },
+        { name: "Kinaray-a", geoCode: "PHL" },
+        { name: "Lau", geoCode: "SLB" },
+        { name: "Limos Kalinga", geoCode: "PHL" },
+        { name: "Lubuagan Kalinga", geoCode: "PHL" },
+        { name: "Lusi", geoCode: "PNG" },
+        { name: "Maguindanao", geoCode: "PHL" },
+        { name: "Makasar", geoCode: "IDN" },
+        { name: "Manam", geoCode: "PNG" },
+        { name: "Manggarai", geoCode: "IDN" },
+        { name: "Mansaka", geoCode: "PHL" },
+        { name: "Mapun", geoCode: "PHL" },
+        { name: "Maranao", geoCode: "PHL" },
+        { name: "Masbatenyo", geoCode: "PHL" },
+        { name: "Mayoyao Ifugao", geoCode: "PHL" },
+        { name: "Vitu", geoCode: "PNG" }, // Muduapa -> Vitu
+        { name: "Mussau-Emira", geoCode: "PNG" },
+        { name: "Nakanai", geoCode: "PNG" },
+        { name: "Ngaju", geoCode: "IDN" },
+        { name: "Niuatoputapu", geoCode: "TON" },
+        { name: "Niuean", geoCode: "NIU" },
+        { name: "Northern Catanduanes Bicolano", geoCode: "PHL" },
+        { name: "Nukuoro", geoCode: "FSM" },
+        { name: "Old Javanese", geoCode: "IDN" },
+        { name: "Paiwan", geoCode: "TWN" },
+        { name: "Pangutaran Sama", geoCode: "PHL" },
+        { name: "Papora", geoCode: "TWN" },
+        { name: "Ponosakan", geoCode: "IDN" },
+        { name: "Pukapukan", geoCode: "COK" },
+        { name: "Raga", geoCode: "VUT" },
+        { name: "Ratahan", geoCode: "IDN" },
+        { name: "Rotuman", geoCode: "FJI" },
+        { name: "Roviana", geoCode: "SLB" },
+        { name: "Sakizaya", geoCode: "TWN" },
+        { name: "Sikaiana", geoCode: "SLB" },
+        { name: "Surigaonon", geoCode: "PHL" },
+        { name: "Tagabawa", geoCode: "PHL" },
+        { name: "Tagakaulu Kalagan", geoCode: "PHL" },
+        { name: "Taroko", geoCode: "TWN" },
+        { name: "Tausug", geoCode: "PHL" },
+        { name: "To'abaita", geoCode: "SLB" },
+        { name: "Tokelauan", geoCode: "TKL" }, // Not a country
+        { name: "Tolai", geoCode: "PNG" },
+        { name: "Tuvaluan", geoCode: "TUV" },
+        { name: "Uma", geoCode: "IDN" },
+        { name: "Uneapa", geoCode: "PNG" },
+        { name: "Woleaian", geoCode: "FSM" },
+        { name: "Yami", geoCode: "TWN" },
+        { name: "Yogad", geoCode: "PHL" },
+        { name: "Cebuano", geoCode: "PHL" },
+        { name: "Chamorro", geoCode: "GUM" },
+        { name: "Fijian", geoCode: "FJI" },
+        { name: "Hawaiian", geoCode: "HI" }, // Not a country
+        { name: "Indonesian", geoCode: "IDN" },
+        { name: "Kapampangan", geoCode: "PHL" },
+        { name: "Malay", geoCode: "MYS" },
+        { name: "Pangasinan", geoCode: "PHL" },
+        { name: "Samoan", geoCode: "WSM" },
+        { name: "Sundanese", geoCode: "IDN" },
+        { name: "Tagalog", geoCode: "PHL" },
+        { name: "Tetum", geoCode: "TLS" },
+        { name: "Waray-Waray", geoCode: "PHL" },
+      ];
+      // TOOD cognates (rima, nima)
+
+      const geoCodes = [...new Set(limaLanguages.map((l) => l.geoCode))];
+
+      const maxBounds = [
+        [-26, 90],
+        [32, 210],
+      ];
+
+      const map = L.map("map", { zoomSnap: 0, maxBounds });
+      map.fitBounds(maxBounds, { animate: false });
+      map.setMinZoom(map.getZoom());
+      map.setMaxZoom(Math.max(5, map.getZoom() * 2));
+
+      L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://carto.com/attributions">CARTO</a>',
+        }
+      ).addTo(map);
+
+      function shiftGeometryRight(geometry) {
+        const shiftCoords = (coords) => {
+          return coords.map(([lng, lat]) =>
+            lng < -30 ? [lng + 360, lat] : [lng, lat]
+          );
+        };
+        if (geometry.type === "Polygon") {
+          geometry.coordinates = geometry.coordinates.map(shiftCoords);
+        } else if (geometry.type === "MultiPolygon") {
+          geometry.coordinates = geometry.coordinates.map((poly) =>
+            poly.map(shiftCoords)
+          );
+        }
+        return geometry;
+      }
+
+      Promise.all([
+        // TODO Save copy in repo
+        fetch(
+          "https://raw.githubusercontent.com/datasets/geo-countries/b0b7794e15e7ec4374bf183dd73cce5b92e1c0ae/data/countries.geojson"
+        )
+          .then((res) => res.json())
+          .then((geo) => ({
+            ...geo,
+            features: geo.features.map((feature) => ({
+              ...feature,
+              properties: {
+                ...feature.properties,
+                code: feature.properties["ISO3166-1-Alpha-3"],
+              },
+            })),
+          })),
+        // TODO Save copy in repo
+        fetch(
+          "https://raw.githubusercontent.com/unitedstates/districts/2efb0b4f05eb56e55c675a0246d858e9a6c53166/states/HI/shape.geojson"
+        )
+          .then((res) => res.json())
+          .then((geo) => ({
+            ...geo,
+            properties: { ...geo.properties, name: "Hawaii", code: "HI" },
+          })),
+        // TODO Save copy in repo
+        fetch(
+          "https://raw.githubusercontent.com/georgique/world-geojson/refs/heads/develop/areas/new_zealand/tokelau.json"
+        )
+          .then((res) => res.json())
+          .then((geo) => ({
+            ...geo,
+            features: [
+              ...geo.features.map((f) => ({
+                ...f,
+                properties: { ...f.properties, name: "Tokelau", code: "TKL" },
+              })),
+            ],
+          })),
+      ]).then(([countriesGeo, hawaiiGeo, tokelauGeo]) => {
+        const areas = [
+          ...countriesGeo.features
+            .filter((feature) => geoCodes.includes(feature.properties.code))
+            .map((f) => {
+              if (
+                ["FJI", "WSM", "NIU", "TON", "COK", "WLF"].includes(
+                  f.properties.code
+                )
+              ) {
+                shiftGeometryRight(f.geometry);
+              }
+              return f;
+            }),
+          shiftGeometryRight(hawaiiGeo),
+          ...tokelauGeo.features,
+        ];
+
+        for (const area of areas) {
+          L.geoJSON(area, {
+            style: {
+              color: "#c21",
+              weight: 2,
+              fillColor: "#d32",
+              fillOpacity: 1,
+            },
+            onEachFeature: (feature, layer) => {
+              const table = createTable(
+                feature.properties.name,
+                feature.properties.code
+              );
+              layer.bindTooltip(table, {
+                sticky: true,
+                opacity: 1,
+                offset: [10, 0],
+              });
+            },
+          }).addTo(map);
+        }
+      });
+
+      function createTable(name, geoCode) {
+        const languages = limaLanguages
+          .filter((lang) => lang.geoCode === geoCode)
+          .sort((a, b) => a.name.localeCompare(b.name));
+        const container = document.createElement("div");
+        container.className = "tooltip-content";
+        container.innerHTML = `
+      <h2>${name}</h2>
+      <table>
+        <tr><th>Language<th>Word<th>Meaning
+      ${languages
+        .map(
+          (lang) => `
+        <tr><td>${lang.name}<td><i>lima</i><td>5`
+        )
+        .join("")}
+      </table>`;
+        return container;
+      }
+    </script>
+  </body>
+</html>

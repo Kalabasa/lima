@@ -41,30 +41,28 @@
         top: 10px;
         left: 50%;
         transform: translateX(-50%);
-        background: rgba(255, 255, 255, 0.9);
+        background: #fff;
         padding: 0.5em 2em 1em;
         border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 4px 12px #0003;
         text-align: center;
         font-family: sans-serif;
         z-index: 1000;
-
-        h1 {
-          margin: 0 0 0.25em;
-          font-size: 2em;
-          font-weight: bold;
-          text-transform: uppercase;
-          color: #c21;
-        }
-
-        p {
-          margin: 0;
-          font-size: 0.9em;
-          color: #333;
-          * + & {
-            margin-top: 0.5em;
-          }
-        }
+      }
+      #info-box h1 {
+        margin: 0 0 0.25em;
+        font-size: 2em;
+        font-weight: bold;
+        text-transform: uppercase;
+        color: #c31;
+      }
+      #info-box p {
+        margin: 0;
+        font-size: 0.9em;
+        color: #333;
+      }
+      #info-box p + p {
+        margin-top: 0.5em;
       }
       .footnote {
         position: absolute;
@@ -163,12 +161,10 @@
           .then((res) => res.json())
           .then((geo) => ({
             ...geo,
-            features: [
-              ...geo.features.map((f) => ({
-                ...f,
-                properties: { ...f.properties, name: "Tokelau", code: "TKL" },
-              })),
-            ],
+            features: geo.features.map((f) => ({
+              ...f,
+              properties: { ...f.properties, name: "Tokelau", code: "TKL" },
+            })),
           })),
       ]).then(([dict, langGeoCodes, countriesGeo, hawaiiGeo, tokelauGeo]) => {
         const geoCodes = [...new Set(langGeoCodes.map((l) => l.geoCode))];
@@ -196,41 +192,58 @@
         }, {});
 
         for (const area of areas) {
-          const { color, fillColor } = colorForCode(area.properties.code);
-          L.geoJSON(area, {
-            interactive: false,
-            style: {
-              color,
-              weight: 2,
-              fillColor,
-              fillOpacity: 1,
-            },
-            onEachFeature: (feature, layer) => {
-              const table = createTable({
-                title: feature.properties.name,
-                langGeoCodes: langGeoCodes
-                  .filter((lang) => lang.geoCode === feature.properties.code)
-                  .sort((a, b) => a.name.localeCompare(b.name)),
-                dictMap,
-              });
+          const { color, fillColor, activeColor, activeFillColor } =
+            colorForCode(area.properties.code);
 
-              // invisible hit layer
-              const hitLayer = L.geoJSON(feature, {
-                style: {
-                  color: "#0000",
-                  weight: 40 * window.devicePixelRatio, // increase hit shape
-                  fillOpacity: 0,
-                  opacity: 0,
-                },
-              });
-              hitLayer.bindTooltip(table, {
-                sticky: true,
-                opacity: 1,
-                offset: [10, 0],
-              });
-              hitLayer.addTo(map);
-            },
+          const style = {
+            color,
+            weight: 1,
+            fillColor,
+            fillOpacity: 1,
+          };
+
+          const mainLayer = L.geoJSON(area, {
+            interactive: false,
+            style,
           }).addTo(map);
+
+          const table = createTable({
+            title: area.properties.name,
+            langGeoCodes: langGeoCodes
+              .filter((lang) => lang.geoCode === area.properties.code)
+              .sort((a, b) => a.name.localeCompare(b.name)),
+            dictMap,
+          });
+
+          const hitLayer = L.geoJSON(area, {
+            style: {
+              color: "#0000",
+              weight: 20 * window.devicePixelRatio,
+              fillOpacity: 0,
+              opacity: 0,
+            },
+          });
+
+          hitLayer.bindTooltip(table, {
+            sticky: true,
+            opacity: 1,
+            offset: [10, 0],
+          });
+
+          hitLayer.on("tooltipopen", () => {
+            mainLayer.setStyle({
+              color: activeColor,
+              fillColor: activeFillColor,
+              weight: 2,
+            });
+            mainLayer.bringToFront();
+          });
+
+          hitLayer.on("tooltipclose", () => {
+            mainLayer.setStyle(style);
+          });
+
+          hitLayer.addTo(map);
         }
       });
 
@@ -261,11 +274,16 @@
       function colorForCode(code) {
         const hash = seed + hashCode(code);
         const hue = -5 + ((hash * 33121) % 20);
-        const saturation = 90 + ((hash * 31451) % 10);
-        const lightness = 60 + ((hash * 44877) % 10);
+        const saturation = 85 + ((hash * 31451) % 5);
+        const lightness = 60 + ((hash * 44877) % 5);
         return {
           color: `hsl(${hue}deg, ${saturation * 0.8}%, ${lightness * 0.7}%)`,
           fillColor: `hsl(${hue}deg, ${saturation}%, ${lightness}%)`,
+          activeColor: `hsl(${hue}deg, ${saturation * 0.9}%, ${lightness}%)`,
+          activeFillColor: `hsl(${hue}deg, ${Math.min(
+            saturation + 10,
+            100
+          )}%, ${Math.min(lightness + 15, 100)}%)`,
         };
       }
 
@@ -273,7 +291,7 @@
         let hash = 0;
         for (let i = 0; i < str.length; i++) {
           hash = (hash << 5) - hash + str.charCodeAt(i);
-          hash |= 0; // Convert to 32bit integer
+          hash |= 0;
         }
         return hash;
       }

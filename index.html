@@ -198,6 +198,7 @@
         for (const area of areas) {
           const { color, fillColor } = colorForCode(area.properties.code);
           L.geoJSON(area, {
+            interactive: false,
             style: {
               color,
               weight: 2,
@@ -212,11 +213,22 @@
                   .sort((a, b) => a.name.localeCompare(b.name)),
                 dictMap,
               });
-              layer.bindTooltip(table, {
+
+              // invisible hit layer
+              const hitLayer = L.geoJSON(feature, {
+                style: {
+                  color: "#0000",
+                  weight: 40 * window.devicePixelRatio, // increase hit shape
+                  fillOpacity: 0,
+                  opacity: 0,
+                },
+              });
+              hitLayer.bindTooltip(table, {
                 sticky: true,
                 opacity: 1,
                 offset: [10, 0],
               });
+              hitLayer.addTo(map);
             },
           }).addTo(map);
         }

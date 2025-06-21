@@ -248,7 +248,7 @@
 
       function colorForCode(code) {
         const hash = seed + hashCode(code);
-        const hue = -10 + ((hash * 33121) % 30);
+        const hue = -5 + ((hash * 33121) % 20);
         const saturation = 90 + ((hash * 31451) % 10);
         const lightness = 60 + ((hash * 44877) % 10);
         return {

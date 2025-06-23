@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖐🏽</text></svg>">
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🖐🏽</text></svg>"
+    />
     <title>Lima Gang</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -20,6 +23,9 @@
       }
       .tooltip-content {
         font-size: 1rem;
+        @media (max-width: 600px) {
+          font-size: calc(max(0.5rem, 3vw));
+        }
         h2 {
           font-size: 1em;
           margin: 0;
@@ -40,34 +46,46 @@
       #info-box {
         position: absolute;
         top: 10px;
-        left: 50%;
-        transform: translateX(-50%);
+        transform: translateX(calc(50vw - 50%));
         background: #fff;
         padding: 0.5em 2em 1em;
         border-radius: 12px;
         box-shadow: 0 4px 12px #0003;
+        box-sizing: border-box;
         text-align: center;
         font-family: sans-serif;
         z-index: 1000;
-      }
-      #info-box h1 {
-        margin: 0 0 0.25em;
-        font-size: 2em;
-        font-weight: bold;
-        text-transform: uppercase;
-        color: #c31;
-      }
-      #info-box p {
-        margin: 0;
-        font-size: 0.9em;
-        color: #333;
-      }
-      #info-box p + p {
-        margin-top: 0.5em;
+        h1 {
+          margin: 0 0 0.25em;
+          font-size: 2em;
+          font-weight: bold;
+          text-transform: uppercase;
+          color: #c31;
+        }
+        p {
+          margin: 0;
+          font-size: 0.9em;
+          color: #333;
+          + p {
+            margin-top: 0.5em;
+          }
+        }
+        @media (max-width: 600px) {
+          max-width: calc(100vw - 110px);
+          padding: 0.5em 1em;
+          font-size: 0.9em;
+          h1 {
+            font-size: 1.5em;
+          }
+          p {
+            font-size: 0.8em;
+          }
+        }
       }
       .footnote {
         position: absolute;
         left: 5px;
+        right: 150px;
         bottom: 5px;
         font-size: 0.8em;
         z-index: 1000;
@@ -107,11 +125,12 @@
         [-24, 90],
         [32, 210],
       ];
+      resizeBounds(maxBounds, window.screen.width / window.screen.height);
 
       const map = L.map("map", { zoomSnap: 0, maxBounds });
       map.fitBounds(maxBounds, { animate: false });
       map.setMinZoom(map.getZoom());
-      map.setMaxZoom(Math.max(5, map.getZoom() * 2));
+      map.setMaxZoom(Math.max(8, map.getZoom() * 2));
 
       L.tileLayer(
         "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
@@ -286,6 +305,23 @@
             100
           )}%, ${Math.min(lightness + 15, 100)}%)`,
         };
+      }
+
+      function resizeBounds(bounds, screenAspect) {
+        const [[south, west], [north, east]] = bounds;
+        const latSpan = north - south;
+        const lngSpan = east - west;
+        const currentAspect = lngSpan / latSpan;
+        const centerLat = (north + south) / 2;
+        const centerLng = (east + west) / 2;
+
+        if (currentAspect > screenAspect * 2) {
+          // Too wide → increase height
+          const newLatSpan = lngSpan / (screenAspect * 2);
+          const halfLat = newLatSpan / 2;
+          bounds[0][0] = centerLat - halfLat;
+          bounds[1][0] = centerLat + halfLat;
+        }
       }
 
       function hashCode(str) {
